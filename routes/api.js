@@ -7,7 +7,7 @@ dotenv.config();
 
 const USER = process.env.RPC_USER;
 const PASS = process.env.RPC_PASSWORD;
-const PORT = process.env.RPC_PORT;
+const RPC_PORT = process.env.RPC_PORT;
 
 const headers = {
   "content-type": "text/plain;"
@@ -20,7 +20,7 @@ router.get("/test", (req, res) => res.json({ msg: "backend works" }));
 router.get("/getblockcount", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getblockcount","params":[]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -39,7 +39,7 @@ router.get("/getblockcount", (req, res) => {
   router.get("/getpeerinfo", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getpeerinfo","params":[]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -58,7 +58,7 @@ router.get("/getblockcount", (req, res) => {
   router.get("/getrawmempool", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getrawmempool","params":[]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -78,7 +78,7 @@ router.get("/getblockcount", (req, res) => {
       req.params.hash
     }"]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -98,7 +98,7 @@ router.get("/getblockcount", (req, res) => {
       req.params.index
     }]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -118,7 +118,7 @@ router.get("/getblockcount", (req, res) => {
       req.params.id
     }"]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -138,7 +138,7 @@ router.get("/getblockcount", (req, res) => {
       req.params.hex
     }"]}`;
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -163,7 +163,7 @@ router.get("/getblockcount", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getwatchonlystatus","params":[${params.join(',')}]}`;
     
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -195,7 +195,7 @@ router.get("/getblockcount", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getanonoutputs","params":[${params}]}`;
 
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -213,8 +213,6 @@ router.get("/getblockcount", (req, res) => {
   });
 
   router.get("/getwatchonlytxes", (req, res) => {
-
-
     var scansecret = req.query.scansecret;
     var scanpublic = req.query.scanpublic;
     var spendsecret = req.query.spendsecret;
@@ -247,7 +245,7 @@ router.get("/getblockcount", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getwatchonlytxes","params":[${params.join(',')}]}`;
     
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
@@ -301,7 +299,7 @@ router.get("/getblockcount", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"importlightwalletaddress","params":[${params.join(',')}]}`;
     
     var options = {
-      url: `http://${USER}:${PASS}@127.0.0.1:${PORT}/`,
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
       headers: headers,
       body: dataString
