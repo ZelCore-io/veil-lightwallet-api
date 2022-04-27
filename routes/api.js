@@ -154,7 +154,7 @@ router.get("/getblockcount", (req, res) => {
   });
 
   router.get("/status", (req, res) => {
-    var scanpublic = req.query.scanpublic;
+    var scansecret= req.query.scansecret;
     var spendpublic = req.query.spendpublic;
 
     var params = [];

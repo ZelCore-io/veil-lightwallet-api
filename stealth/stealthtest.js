@@ -21,6 +21,12 @@ generatePrivateKey = () => {
     // get the public key in a compressed format
     return secp256k1.publicKeyCreate(privKey);
   };
+
+  function buf2hex(buffer) { // buffer is an ArrayBuffer
+    return [...new Uint8Array(buffer)]
+        .map(x => x.toString(16).padStart(2, '0'))
+        .join('');
+  }
   
   const scanPriv = generatePrivateKey();
   const spendPriv = generatePrivateKey();
@@ -32,4 +38,7 @@ generatePrivateKey = () => {
     generatePublicKey(spendPriv)
   );
   
+  console.log(scanPriv.toString("hex"));
+  console.log(spendPriv.toString("hex"));
+  console.log(buf2hex(generatePublicKey(spendPriv).buffer));
   console.log(address.toJson());
