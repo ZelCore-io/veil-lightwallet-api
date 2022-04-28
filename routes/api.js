@@ -178,6 +178,34 @@ router.get("/getblockcount", (req, res) => {
     request(options, callback);
   });
 
+  router.get("/checkkeyimages", (req, res) => {
+    var images = req.query.keyimages;
+
+    let test = [];
+    for(const item in images) {
+      test.push(`"${item}"`);
+    }
+
+    var params = [];
+    params.push(`[${test}]`);
+    var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"checkkeyimages","params":[${params.join(',')}]}`;
+    
+    var options = {
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
+      method: "POST",
+      headers: headers,
+      body: dataString
+    };
+    
+    callback = (error, response, body) => {
+      if (!error && response.statusCode == 200) {
+        const data = JSON.parse(body);
+        res.send(data);
+      }
+    };
+    request(options, callback);
+  });
+
   router.get("/getanonoutputs", (req, res) => {
     var inputsize = req.query.inputsize;
     var ringsize = req.query.ringsize;
@@ -254,7 +282,7 @@ router.get("/getblockcount", (req, res) => {
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
         const data = JSON.parse(body);
-        res.send(data);
+        res.send(JSON.stringify(data));
       }
     };
     request(options, callback);
