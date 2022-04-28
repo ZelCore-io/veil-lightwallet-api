@@ -184,7 +184,7 @@ router.get("/getblockcount", (req, res) => {
     console.log(images);
     let test = [];
     for(const item in images) {
-      test.push(`"${item}"`);
+      test.push(`"${images[item]}"`);
     }
 
     var params = [];
