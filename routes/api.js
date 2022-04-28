@@ -181,6 +181,7 @@ router.get("/getblockcount", (req, res) => {
   router.get("/checkkeyimages", (req, res) => {
     var images = req.query.keyimages;
 
+    console.log(images);
     let test = [];
     for(const item in images) {
       test.push(`"${item}"`);
