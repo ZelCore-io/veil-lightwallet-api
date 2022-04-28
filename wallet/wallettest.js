@@ -155,13 +155,23 @@ async function checkKeyImages() {
             console.log("No Key images to find");
             return false;
         }
-        const params = { keyimages: utxosKeyImages[0].keyimage };
-        console.log(params)
-        let response = await axios.get(WATCHONLY_API_URL+GET_CHECK_KEYIMAGES, {params});
-        console.log(response.data);
 
-        // let objStr = JSON.stringify(response.data.result);
-        // utxos = JSON.parse(objStr);
+        var keys = [];
+        for (item in utxosKeyImages) {
+            keys.push(utxosKeyImages[item].keyimage);
+        }
+
+        const params = { keyimages: keys };
+        let response = await axios.get(WATCHONLY_API_URL+GET_CHECK_KEYIMAGES, {params});
+
+        // update our keyimage list
+        for (item in response.data.result) {
+            if (response.data.result[item].status === 'valid') {
+                utxosKeyImages[item].spent = response.data.result[item].spent;
+            } else {
+                utxosKeyImages[item].spent = null;
+            }
+        }
        
         return true;
     } catch(error) {
@@ -176,7 +186,8 @@ function checkcallback() {
 };
 
 /// Get the keyimages from the light wallet
-/// This would be done by Zelcore running the daemon with -lightwallet=1 and calling getkeyimages and passing in the correct params
+/// This would be done by Zelcore running the daemon with -lightwallet=1
+/// calling getkeyimages and passing in the correct params
 async function getKeyImages(checkcallback) {
     try {
         console.log("Call getKeyImages()");
@@ -207,23 +218,28 @@ async function getKeyImages(checkcallback) {
                     utxosKeyImages.push(data.result[item]);
                 }
                 console.log(utxosKeyImages)
-                checkcallback();
+                return checkcallback();
             } else if(!error) {
                 console.log(response);
             } else {
                 console.log(error);
             }
         };
-        request(options, callback)
+        return request(options, callback)
     } catch (error) {
         console.log(error);
         return false;
     }
 }
 
-async function testasync() {
-    console.log("Hello");
-    return "Hello";
+async function checkSpendableAmount() {
+    var amount = 0;
+    for (const item in utxosKeyImages) {
+        if (utxosKeyImages[item].spent === false) {
+            amount += utxosKeyImages[item].amount;
+        }
+    }
+    return amount;
 }
 
 // API - Check address status - If address not imported, import it. 
@@ -266,14 +282,12 @@ async function run() {
         await getKeyImages(checkcallback)
 
 
-        await testasync().then(function(value) {
-            console.log(value);
+        await checkSpendableAmount().then(function(value) {
+            console.log("Spendable amount is : ", value);
         })
-        // // // Go through txes to and get the keyimages
-        // // let gotMyImages = await checkKeyImages();
-        // // if (gotMyImages) {
-        // //     console.log("Got keyimage statuses");
-        // // }
+
+
+
 
 
     } catch (error) {
