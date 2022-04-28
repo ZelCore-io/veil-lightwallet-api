@@ -88,6 +88,7 @@ if(!secp256k1.privateKeyVerify(readSpendPriv)) {
 let addressVerified = false;
 let utxos = [];
 let utxosKeyImages = [];
+let balance = 0;
 
 // Create Stealth Address
 const address = new SxAddress(
@@ -99,15 +100,23 @@ const address = new SxAddress(
 
 // Check if address is synced to watchonly server
 
-async function checkAddressStatus() {
+async function start(callbackImport, callbackTX) {
     try {
         const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend)};
         let response = await axios.get(WATCHONLY_API_URL+GET_ADDRESS_STATUS, {params});
         console.log("Address Status: " + response.data.result.status);
         if (response.data.result.status === "synced") {
             addressVerified = true;
+            return callbackTX(getKeyImages)
         }
-        return response.data.result;
+
+        if (response.data.result.status === "failed") {
+            return callbackImport();
+        }
+
+        if (response.data.result.status === "failed") {
+            console.log("Scanning address for transaction. Please wait...");
+        }
     } catch(error) {
         console.log(error);
         return error;
@@ -131,7 +140,7 @@ async function importAddress() {
     }
 }
 
-async function getTransactions() {
+async function getTransactions(callback) {
     try {
         if (!addressVerified) {
             console.log("Address not verified by server");
@@ -142,14 +151,14 @@ async function getTransactions() {
 
         let objStr = JSON.stringify(response.data.result);
         utxos = JSON.parse(objStr);
-        return true;
+        return callback(checkKeyImages);
     } catch(error) {
         console.log(error);
         return false;
     }
 }
 
-async function checkKeyImages() {
+async function checkKeyImages(callback) {
     try {
         if (!utxosKeyImages.length) {
             console.log("No Key images to find");
@@ -173,24 +182,18 @@ async function checkKeyImages() {
             }
         }
        
-        return true;
+        return callback(displayData);
     } catch(error) {
         console.log(error);
         return false;
     }
 }
 
-function checkcallback() {
-    console.log("Checking keys now!");
-    checkKeyImages();
-};
-
 /// Get the keyimages from the light wallet
 /// This would be done by Zelcore running the daemon with -lightwallet=1
 /// calling getkeyimages and passing in the correct params
-async function getKeyImages(checkcallback) {
+async function getKeyImages(callback2) {
     try {
-        console.log("Call getKeyImages()");
         var keyimages = [];
         for (const item in Object.keys(utxos)) {
             keyimages.push(`"${utxos[item].raw}"`);
@@ -210,15 +213,12 @@ async function getKeyImages(checkcallback) {
             body: dataString
         };
         function callback(error, response, body) {
-            console.log("Call getKeyImages() callback");
             if (!error && response.statusCode == 200) {
                 const data = JSON.parse(body);
                 for(const item in data.result) {
-                    console.log("Got keyimage")
                     utxosKeyImages.push(data.result[item]);
                 }
-                console.log(utxosKeyImages)
-                return checkcallback();
+                return callback2(checkSpendableAmount);
             } else if(!error) {
                 console.log(response);
             } else {
@@ -232,14 +232,21 @@ async function getKeyImages(checkcallback) {
     }
 }
 
-async function checkSpendableAmount() {
+async function checkSpendableAmount(callback) {
     var amount = 0;
     for (const item in utxosKeyImages) {
         if (utxosKeyImages[item].spent === false) {
             amount += utxosKeyImages[item].amount;
         }
     }
-    return amount;
+    balance = amount;
+    return callback();
+}
+
+function displayData() {
+    console.log("Total numer of transactions: ", utxos.length);
+    console.log("Total balance: ", balance);
+    console.log("Total KeyImages: ", utxosKeyImages.length);
 }
 
 // API - Check address status - If address not imported, import it. 
@@ -253,38 +260,29 @@ async function run() {
     try {
         var imported = false;
         // See if address is imported
-        await checkAddressStatus().then(function(value) {
-            if (value.status === "failed") {
-                imported = false;
-            } else if (value.status === "scanning") {
-                console.log("Server is scanning the blockchain for address transactions");
-                return;
-            } else {
-                imported = true;
-            }
-        });
-
-        if (!imported) {
-            await importAddress().then(function(value) {
-                console.log("importing address finished");
-            });
-        }
-
-        // Get the transactions
-        await getTransactions().then(function(value) {
-            if(value) {
-                console.log("Found ", utxos.length, " ringct transactions!!!");
-            } else {
-                console.log("Get transactions failed");
-            }
-        });
-
-        await getKeyImages(checkcallback)
 
 
-        await checkSpendableAmount().then(function(value) {
-            console.log("Spendable amount is : ", value);
-        })
+        /// Check Status -> With call back to import address, or if already import, gettransaction
+        /// GetTransaction -> With callback to getKeyImages
+        /// GetKeyImage -> With callback to checkKeyImages
+        /// CheckKeyImages -> With callback to compute balance
+        await start(importAddress, getTransactions);
+
+        // // Get the transactions
+        // await getTransactions().then(function(value) {
+        //     if(value) {
+        //         console.log("Found ", utxos.length, " ringct transactions!!!");
+        //     } else {
+        //         console.log("Get transactions failed");
+        //     }
+        // });
+
+        // await getKeyImages(checkcallback)
+
+
+        // await checkSpendableAmount().then(function(value) {
+        //     console.log("Spendable amount is : ", value);
+        // })
 
 
 
