@@ -133,6 +133,7 @@ router.get("/getblockcount", (req, res) => {
   });
 
   router.post("/sendrawtransaction", (req, res) => {
+    console.log(req);
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"sendrawtransaction","params":["${
       req.query.rawhex
     }"]}`;
