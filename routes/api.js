@@ -153,9 +153,9 @@ router.get("/getblockcount", (req, res) => {
     request(options, callback);
   });
 
-  router.get("/decoderawtransaction/:hex", (req, res) => {
+  router.get("/decoderawtransaction", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"decoderawtransaction","params":["${
-      req.params.hex
+      req.query.rawhex
     }"]}`;
     var options = {
       url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,

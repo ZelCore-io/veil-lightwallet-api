@@ -280,8 +280,8 @@ async function createSignedTransaction() {
 
 async function sendRawHex() {
     try {
-        const params = {};
-        let response = await axios.get(WATCHONLY_API_URL+GET_SEND_RAW_TRANSACTION+"/"+rawSignedHex, {params});
+        const params = { rawhex : rawSignedHex };
+        let response = await axios.get(WATCHONLY_API_URL+GET_SEND_RAW_TRANSACTION, {params});
         console.log(response.data);
         return true;
 
