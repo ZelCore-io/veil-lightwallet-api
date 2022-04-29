@@ -271,7 +271,7 @@ async function run() {
                         console.log("Get transactions failed to get transactions");
                     }
                 });
-            } else if (value == "failed") {
+            } else if (addressValue == "failed") {
                 importAddress().then(function(value) {
                     console.log("Imported address, Try again in a few mintues givening to to sync");
                 });
@@ -285,15 +285,15 @@ async function run() {
 }
 
 
-let a = await getAddressStatus();
+// let a = await getAddressStatus();
 
-let b = await getTransactions();
+// let b = await getTransactions();
 
-let c = await getKeyImages();
+// let c = await getKeyImages();
 
-let d = await checkKeyImages();
+// let d = await checkKeyImages();
 
-checkSpendableAmount();
-displayData();
+// checkSpendableAmount();
+// displayData();
 
 run();

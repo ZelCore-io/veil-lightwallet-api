@@ -28,7 +28,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -46,7 +47,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -83,7 +85,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -102,7 +105,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -121,7 +125,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -140,7 +145,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -164,7 +170,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -192,7 +199,8 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        res.json(body);
+        const data = JSON.parse(body);
+        res.json(data);
       }
     };
     request(options, callback);
@@ -222,7 +230,8 @@ router.get("/getblockcount", (req, res) => {
     };
     
     callback = (error, response, body) => {
-      res.json(body);
+      const data = JSON.parse(body);
+      res.json(data);
     };
     request(options, callback);
   });
@@ -271,7 +280,8 @@ router.get("/getblockcount", (req, res) => {
       //   const data = JSON.parse(body);
       //   res.send(JSON.stringify(data));
       // }
-      res.json(body);
+      const data = JSON.parse(body);
+      res.json(data);
     };
     request(options, callback);
   });
@@ -322,7 +332,8 @@ router.get("/getblockcount", (req, res) => {
     };
     
     callback = (error, response, body) => {
-      res.json(body);
+      const data = JSON.parse(body);
+      res.json(data);
     };
     request(options, callback);
   });
