@@ -18,10 +18,14 @@ const GET_ADDRESS_STATUS = "status";
 const GET_IMPORT_ADDRESS = "importlightaddress";
 const GET_TRANSACTIONS = "getwatchonlytxes";
 const GET_CHECK_KEYIMAGES = "checkkeyimages";
+const GET_ANON_OUTPUTS = "getanonoutputs";
 
 const USER = process.env.RPC_USER;
 const PASS = process.env.RPC_PASSWORD;
 const RPC_PORT = process.env.LIGHT_WALLET_RPC_PORT;
+
+const SEND_TO_ADDRESS = "3tXzvUU6PnWvZZaDt56uX8B9DT62QRVvAheWwRCyiG4TJyco8CdxbzkHUD24Ns7jdMP4GicdUMo5AmGCdTwfhq3QPHqUJvoZGF9sYWm";
+const SEND_AMOUNT = "100";
 
 const headers = {
     "content-type": "text/plain;"
@@ -92,6 +96,7 @@ let addressVerified = false;
 let utxos = [];
 let utxosKeyImages = [];
 let balance = 0;
+let anonoutputs = [];
 
 // Create Stealth Address
 const address = new SxAddress(
@@ -102,7 +107,6 @@ const address = new SxAddress(
   );
 
 // Check if address is synced to watchonly server
-
 async function getAddressStatus() {
     try {
         const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend)};
@@ -144,10 +148,41 @@ async function getTransactions() {
         const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend) };
         let response = await axios.get(WATCHONLY_API_URL+GET_TRANSACTIONS, {params});
 
-        let objStr = JSON.stringify(response.data.result);
-        utxos = JSON.parse(objStr);
+        utxos = response.data.result
         return true;
     } catch(error) {
+        console.log(error);
+        return false;
+    }
+}
+
+/// Get the keyimages from the light wallet
+/// This would be done by Zelcore running the daemon with -lightwallet=1
+/// calling getkeyimages and passing in the correct params
+async function getKeyImages() {
+    try {
+        var keyimages = [];
+        for (const item in Object.keys(utxos)) {
+            keyimages.push(`"${utxos[item].raw}"`);
+        }
+
+        var params = [];
+        params.push(`[${keyimages}]`);
+        params.push(`"${buf2hex(readSpendPriv)}"`);
+        params.push(`"${buf2hex(readScanPriv)}"`);
+        params.push(`"${buf2hex(readPublicSpend)}"`);
+        var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getkeyimages","params":[${params.join(',')}]}`;
+
+        var options = {
+            url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
+            method: "POST",
+            headers: headers,
+            body: dataString
+        };
+
+        const result = await requestPromise(options)
+        return result;
+    } catch (error) {
         console.log(error);
         return false;
     }
@@ -184,22 +219,48 @@ async function checkKeyImages() {
     }
 }
 
-/// Get the keyimages from the light wallet
-/// This would be done by Zelcore running the daemon with -lightwallet=1
-/// calling getkeyimages and passing in the correct params
-async function getKeyImages() {
+async function getAnonOutputs() {
     try {
-        var keyimages = [];
+        const params = { inputssize: 5, ringsize: 5 };
+        let response = await axios.get(WATCHONLY_API_URL+GET_ANON_OUTPUTS, {params});
+
+        anonoutputs = response.data.result;
+
+        return true;
+
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+async function createSignedTransaction() {
+    try {
+        var currentAmount = 0;
+        var rawUtxoData = [];
+        var rawAnonOutputData = [];
         for (const item in Object.keys(utxos)) {
-            keyimages.push(`"${utxos[item].raw}"`);
+            if (currentAmount < SEND_AMOUNT) {
+                currentAmount += utxos[item].amount
+                rawUtxoData.push(`"${utxos[item].raw}"`);
+            } else {
+                break;
+            }
+        }
+
+        for (const item in Object.keys(anonoutputs)) {
+            rawAnonOutputData.push(`"${anonoutputs[item].raw}"`);
         }
 
         var params = [];
-        params.push(`[${keyimages}]`);
+        params.push(`"${SEND_TO_ADDRESS}"`);
+        params.push(`"${SEND_AMOUNT}"`);
         params.push(`"${buf2hex(readSpendPriv)}"`);
         params.push(`"${buf2hex(readScanPriv)}"`);
         params.push(`"${buf2hex(readPublicSpend)}"`);
-        var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getkeyimages","params":[${params.join(',')}]}`;
+        params.push(`[${rawUtxoData}]`);
+        params.push(`[${rawAnonOutputData}]`);
+        var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"buildlightwallettx","params":[${params.join(',')}]}`;
 
         var options = {
             url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
@@ -210,6 +271,21 @@ async function getKeyImages() {
 
         const result = await requestPromise(options)
         return result;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+async function sendRawHex() {
+    try {
+        const params = {};
+        let response = await axios.get(WATCHONLY_API_URL+GET_ANON_OUTPUTS/rawSignedHex, {params});
+
+        console.log(response.data);
+
+        return true;
+
     } catch (error) {
         console.log(error);
         return false;
@@ -256,6 +332,24 @@ async function run() {
                                 if (checkKeyValue) {
                                     console.log("Checked if keyimages were spent");
                                     
+                                    getAnonOutputs().then(function(anonValue) {
+                                        if (anonValue) {
+                                            // Create the transaction
+                                            createSignedTransaction().then(function(signedTxHex) {
+                                                rawSignedHex = signedTxHex.body.result;
+                                                console.log("Created signed transaction");
+
+                                                sendRawHex();
+                                            });
+
+
+                                        }
+
+                                    });
+
+
+                                    checkSpendableAmount();
+                                    displayData();
                                     /// Get AnonOuts
 
                                     /// Create Tranasction

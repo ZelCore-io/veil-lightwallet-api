@@ -132,6 +132,26 @@ router.get("/getblockcount", (req, res) => {
     request(options, callback);
   });
 
+  router.get("/sendrawtransaction/:hex", (req, res) => {
+    var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"sendrawtransaction","params":["${
+      req.params.hex
+    }"]}`;
+    var options = {
+      url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
+      method: "POST",
+      headers: headers,
+      body: dataString
+    };
+    
+    callback = (error, response, body) => {
+      if (!error && response.statusCode == 200) {
+        const data = JSON.parse(body);
+        res.json(data);
+      }
+    };
+    request(options, callback);
+  });
+
   router.get("/decoderawtransaction/:hex", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"decoderawtransaction","params":["${
       req.params.hex
