@@ -19,6 +19,7 @@ const GET_IMPORT_ADDRESS = "importlightaddress";
 const GET_TRANSACTIONS = "getwatchonlytxes";
 const GET_CHECK_KEYIMAGES = "checkkeyimages";
 const GET_ANON_OUTPUTS = "getanonoutputs";
+const GET_SEND_RAW_TRANSACTION = "sendrawtransaction";
 
 const USER = process.env.RPC_USER;
 const PASS = process.env.RPC_PASSWORD;
@@ -280,10 +281,8 @@ async function createSignedTransaction() {
 async function sendRawHex() {
     try {
         const params = {};
-        let response = await axios.get(WATCHONLY_API_URL+GET_ANON_OUTPUTS/rawSignedHex, {params});
-
+        let response = await axios.get(WATCHONLY_API_URL+GET_SEND_RAW_TRANSACTION+"/"+rawSignedHex, {params});
         console.log(response.data);
-
         return true;
 
     } catch (error) {
@@ -336,13 +335,17 @@ async function run() {
                                         if (anonValue) {
                                             // Create the transaction
                                             createSignedTransaction().then(function(signedTxHex) {
-                                                rawSignedHex = signedTxHex.body.result;
+                                                console.log(signedTxHex);
+                                                const data = JSON.parse(signedTxHex.body);
+                                                rawSignedHex = data.result;
+                                                console.log("Raw hex = " + rawSignedHex);
                                                 console.log("Created signed transaction");
 
-                                                sendRawHex();
+                                                sendRawHex().then(function(sendValue) {
+                                                    console.log(sendValue);
+                                                    console.log("Tx Sent");
+                                                })
                                             });
-
-
                                         }
 
                                     });
