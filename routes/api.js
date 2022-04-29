@@ -132,9 +132,9 @@ router.get("/getblockcount", (req, res) => {
     request(options, callback);
   });
 
-  router.get("/sendrawtransaction/:hex", (req, res) => {
+  router.get("/sendrawtransaction", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"sendrawtransaction","params":["${
-      req.params.hex
+      req.query.rawhex
     }"]}`;
     var options = {
       url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
@@ -153,9 +153,9 @@ router.get("/getblockcount", (req, res) => {
     request(options, callback);
   });
 
-  router.get("/decoderawtransaction", (req, res) => {
+  router.get("/decoderawtransaction/:hex", (req, res) => {
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"decoderawtransaction","params":["${
-      req.query.rawhex
+      req.params.hex
     }"]}`;
     var options = {
       url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
