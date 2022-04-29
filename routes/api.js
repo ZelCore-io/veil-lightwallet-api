@@ -143,6 +143,7 @@ router.get("/getblockcount", (req, res) => {
       body: dataString
     };
 
+    console.log(dataString);
     callback = (error, response, body) => {
       const data = JSON.parse(body);
       console.log(data);
@@ -208,8 +209,7 @@ router.get("/getblockcount", (req, res) => {
     var params = [];
     params.push(`[${test}]`);
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"checkkeyimages","params":[${params.join(',')}]}`;
-    
-    console.log(dataString);
+
     var options = {
       url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
       method: "POST",
