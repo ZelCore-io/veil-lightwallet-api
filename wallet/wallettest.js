@@ -204,13 +204,13 @@ async function checkKeyImages() {
         const params = { keyimages: keys };
         let response = await axios.get(WATCHONLY_API_URL+GET_CHECK_KEYIMAGES, {params});
 
+        console.log(response.data);
         // update our keyimage list
         for (item in response.data.result) {
             if (response.data.result[item].status === 'valid') {
                 utxosKeyImages[item].spent = response.data.result[item].spent;
                 utxosKeyImages[item].spentinmempool = response.data.result[item].spentinmempool;
                 utxosKeyImages[item].txid = response.data.result[item].txid;
-                utxosKeyImages[item].txidmempool = response.data.result[item].txidmempool;
             } else {
                 utxosKeyImages[item].spent = null;
                 utxosKeyImages[item].spentinmempool = null;
@@ -242,8 +242,8 @@ async function createSignedTransaction() {
         var currentAmount = 0;
         var rawUtxoData = [];
         var rawAnonOutputData = [];
+        console.log(utxosKeyImages);
         for (const item in Object.keys(utxos)) {
-            console.log(utxosKeyImages);
             if (!utxosKeyImages[item].spent && !utxosKeyImages[item].spentinmempool) {
                 if (currentAmount < SEND_AMOUNT) {
                     currentAmount += utxos[item].amount
@@ -346,8 +346,7 @@ async function run() {
                                                 rawSignedHex = data.result;
 
                                                 sendRawHex().then(function(sendValue) {
-                                                    console.log(sendValue);
-                                                    console.log("Tx Sent - ", sendValue);
+                                                    console.log("Tx Sent - ", sendValue.data);
                                                 });
                                             });
                                         }
