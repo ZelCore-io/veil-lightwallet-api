@@ -9,6 +9,9 @@ var request = require("request");
 const dotenv = require("dotenv");
 dotenv.config();
 
+const util = require('util');
+const requestPromise = util.promisify(request);
+
 const WATCHONLY_API_URL = "http://164.92.101.99:4444/api/";
 const GET_BLOCCK_COUNT = "getblockcount";
 const GET_ADDRESS_STATUS = "status";
@@ -100,23 +103,15 @@ const address = new SxAddress(
 
 // Check if address is synced to watchonly server
 
-async function start(callbackImport, callbackTX) {
+async function getAddressStatus() {
     try {
         const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend)};
         let response = await axios.get(WATCHONLY_API_URL+GET_ADDRESS_STATUS, {params});
         console.log("Address Status: " + response.data.result.status);
         if (response.data.result.status === "synced") {
             addressVerified = true;
-            return callbackTX(getKeyImages)
         }
-
-        if (response.data.result.status === "failed") {
-            return callbackImport();
-        }
-
-        if (response.data.result.status === "failed") {
-            console.log("Scanning address for transaction. Please wait...");
-        }
+        return response.data.result.status;
     } catch(error) {
         console.log(error);
         return error;
@@ -140,7 +135,7 @@ async function importAddress() {
     }
 }
 
-async function getTransactions(callback) {
+async function getTransactions() {
     try {
         if (!addressVerified) {
             console.log("Address not verified by server");
@@ -151,14 +146,14 @@ async function getTransactions(callback) {
 
         let objStr = JSON.stringify(response.data.result);
         utxos = JSON.parse(objStr);
-        return callback(checkKeyImages);
+        return true;
     } catch(error) {
         console.log(error);
         return false;
     }
 }
 
-async function checkKeyImages(callback) {
+async function checkKeyImages() {
     try {
         if (!utxosKeyImages.length) {
             console.log("No Key images to find");
@@ -182,7 +177,7 @@ async function checkKeyImages(callback) {
             }
         }
        
-        return callback(displayData);
+        return true;
     } catch(error) {
         console.log(error);
         return false;
@@ -192,7 +187,7 @@ async function checkKeyImages(callback) {
 /// Get the keyimages from the light wallet
 /// This would be done by Zelcore running the daemon with -lightwallet=1
 /// calling getkeyimages and passing in the correct params
-async function getKeyImages(callback2) {
+async function getKeyImages() {
     try {
         var keyimages = [];
         for (const item in Object.keys(utxos)) {
@@ -212,27 +207,16 @@ async function getKeyImages(callback2) {
             headers: headers,
             body: dataString
         };
-        function callback(error, response, body) {
-            if (!error && response.statusCode == 200) {
-                const data = JSON.parse(body);
-                for(const item in data.result) {
-                    utxosKeyImages.push(data.result[item]);
-                }
-                return callback2(checkSpendableAmount);
-            } else if(!error) {
-                console.log(response);
-            } else {
-                console.log(error);
-            }
-        };
-        return request(options, callback)
+
+        const result = await requestPromise(options)
+        return result;
     } catch (error) {
         console.log(error);
         return false;
     }
 }
 
-async function checkSpendableAmount(callback) {
+function checkSpendableAmount() {
     var amount = 0;
     for (const item in utxosKeyImages) {
         if (utxosKeyImages[item].spent === false) {
@@ -240,7 +224,6 @@ async function checkSpendableAmount(callback) {
         }
     }
     balance = amount;
-    return callback();
 }
 
 function displayData() {
@@ -258,66 +241,59 @@ function displayData() {
 
 async function run() {
     try {
-        var imported = false;
-        // See if address is imported
+        getAddressStatus().then(function(addressValue) {
+            if (addressValue == "synced") {
+                getTransactions().then(function(txValue) {
+                    if (txValue) {
+                        getKeyImages().then(function(getKeyValue) {
+                            console.log("Called get getKeyImages");
+                            const data = JSON.parse(getKeyValue.body);
+                            data.result.forEach(element => {
+                                utxosKeyImages.push(element);
+                            });
 
+                            checkKeyImages().then(function(checkKeyValue) {
+                                if (checkKeyValue) {
+                                    console.log("Checked if keyimages were spent");
+                                    
+                                    /// Get AnonOuts
 
-        /// Check Status -> With call back to import address, or if already import, gettransaction
-        /// GetTransaction -> With callback to getKeyImages
-        /// GetKeyImage -> With callback to checkKeyImages
-        /// CheckKeyImages -> With callback to compute balance
-        await start(importAddress, getTransactions);
+                                    /// Create Tranasction
 
-        // // Get the transactions
-        // await getTransactions().then(function(value) {
-        //     if(value) {
-        //         console.log("Found ", utxos.length, " ringct transactions!!!");
-        //     } else {
-        //         console.log("Get transactions failed");
-        //     }
-        // });
-
-        // await getKeyImages(checkcallback)
-
-
-        // await checkSpendableAmount().then(function(value) {
-        //     console.log("Spendable amount is : ", value);
-        // })
-
-
-
-
-
+                                    /// Send to explorer
+                                } else {
+                                    console.log("Failed to check if keyimages were spent");
+                                }
+                                
+                            });
+                        });
+                    } else {
+                        console.log("Get transactions failed to get transactions");
+                    }
+                });
+            } else if (value == "failed") {
+                importAddress().then(function(value) {
+                    console.log("Imported address, Try again in a few mintues givening to to sync");
+                });
+            } else {
+                console.log("Scanning blockchain for transactions. Please wait...");
+            }
+        });
     } catch (error) {
         console.log(error);
     }
 }
 
 
+let a = await getAddressStatus();
 
+let b = await getTransactions();
+
+let c = await getKeyImages();
+
+let d = await checkKeyImages();
+
+checkSpendableAmount();
+displayData();
 
 run();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-

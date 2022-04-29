@@ -28,8 +28,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -47,8 +46,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -66,8 +64,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -86,8 +83,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -106,8 +102,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -126,8 +121,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -146,8 +140,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -171,8 +164,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -181,7 +173,6 @@ router.get("/getblockcount", (req, res) => {
   router.get("/checkkeyimages", (req, res) => {
     var images = req.query.keyimages;
 
-    console.log(images);
     let test = [];
     for(const item in images) {
       test.push(`"${images[item]}"`);
@@ -201,8 +192,7 @@ router.get("/getblockcount", (req, res) => {
     
     callback = (error, response, body) => {
       if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
+        res.json(body);
       }
     };
     request(options, callback);
@@ -232,12 +222,7 @@ router.get("/getblockcount", (req, res) => {
     };
     
     callback = (error, response, body) => {
-      if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
-      } else if(!error) {
-        res.send(JSON.parse(body));
-      }
+      res.json(body);
     };
     request(options, callback);
   });
@@ -282,10 +267,11 @@ router.get("/getblockcount", (req, res) => {
     };
     
     callback = (error, response, body) => {
-      if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(JSON.stringify(data));
-      }
+      // if (!error && response.statusCode == 200) {
+      //   const data = JSON.parse(body);
+      //   res.send(JSON.stringify(data));
+      // }
+      res.json(body);
     };
     request(options, callback);
   });
@@ -336,12 +322,7 @@ router.get("/getblockcount", (req, res) => {
     };
     
     callback = (error, response, body) => {
-      if (!error && response.statusCode == 200) {
-        const data = JSON.parse(body);
-        res.send(data);
-      } else if(!error) {
-        res.send(JSON.parse(body));
-      }
+      res.json(body);
     };
     request(options, callback);
   });
