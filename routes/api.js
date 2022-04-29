@@ -142,10 +142,11 @@ router.get("/getblockcount", (req, res) => {
       headers: headers,
       body: dataString
     };
-    
+
     callback = (error, response, body) => {
       const data = JSON.parse(body);
       console.log(data);
+      console.log(error);
       res.json(data);
     };
     request(options, callback);
