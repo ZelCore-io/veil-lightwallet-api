@@ -19,7 +19,7 @@ const GET_IMPORT_ADDRESS = "importlightaddress";
 const GET_TRANSACTIONS = "getwatchonlytxes";
 const GET_CHECK_KEYIMAGES = "checkkeyimages";
 const GET_ANON_OUTPUTS = "getanonoutputs";
-const GET_SEND_RAW_TRANSACTION = "sendrawtransaction";
+const POST_SEND_RAW_TRANSACTION = "sendrawtransaction";
 
 const USER = process.env.RPC_USER;
 const PASS = process.env.RPC_PASSWORD;
@@ -281,7 +281,7 @@ async function createSignedTransaction() {
 async function sendRawHex() {
     try {
         const params = { rawhex : rawSignedHex };
-        let response = await axios.get(WATCHONLY_API_URL+GET_SEND_RAW_TRANSACTION, {params});
+        let response = await axios.post(WATCHONLY_API_URL+POST_SEND_RAW_TRANSACTION, {params});
         console.log(response.data);
         return true;
 
