@@ -133,9 +133,9 @@ router.get("/getblockcount", (req, res) => {
   });
 
   router.post("/sendrawtransaction", (req, res) => {
-    console.log(req);
+    console.log(req.body.params.rawhex);
     var dataString = `{"jsonrpc":"1.0","id":"curltext","method":"sendrawtransaction","params":["${
-      req.query.rawhex
+      req.body.params.rawhex
     }"]}`;
     var options = {
       url: `http://${USER}:${PASS}@127.0.0.1:${RPC_PORT}/`,
