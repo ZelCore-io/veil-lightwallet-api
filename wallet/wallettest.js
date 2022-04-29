@@ -208,8 +208,12 @@ async function checkKeyImages() {
         for (item in response.data.result) {
             if (response.data.result[item].status === 'valid') {
                 utxosKeyImages[item].spent = response.data.result[item].spent;
+                utxosKeyImages[item].spentinmempool = response.data.result[item].spentinmempool;
+                utxosKeyImages[item].txid = response.data.result[item].txid;
+                utxosKeyImages[item].txidmempool = response.data.result[item].txidmempool;
             } else {
                 utxosKeyImages[item].spent = null;
+                utxosKeyImages[item].spentinmempool = null;
             }
         }
        
@@ -224,9 +228,7 @@ async function getAnonOutputs() {
     try {
         const params = { inputssize: 5, ringsize: 5 };
         let response = await axios.get(WATCHONLY_API_URL+GET_ANON_OUTPUTS, {params});
-
         anonoutputs = response.data.result;
-
         return true;
 
     } catch (error) {
@@ -241,11 +243,14 @@ async function createSignedTransaction() {
         var rawUtxoData = [];
         var rawAnonOutputData = [];
         for (const item in Object.keys(utxos)) {
-            if (currentAmount < SEND_AMOUNT) {
-                currentAmount += utxos[item].amount
-                rawUtxoData.push(`"${utxos[item].raw}"`);
-            } else {
-                break;
+            console.log(utxosKeyImages);
+            if (!utxosKeyImages[item].spent && !utxosKeyImages[item].spentinmempool) {
+                if (currentAmount < SEND_AMOUNT) {
+                    currentAmount += utxos[item].amount
+                    rawUtxoData.push(`"${utxos[item].raw}"`);
+                } else {
+                    break;
+                }
             }
         }
 
@@ -282,8 +287,7 @@ async function sendRawHex() {
     try {
         const params = { rawhex : rawSignedHex };
         let response = await axios.post(WATCHONLY_API_URL+POST_SEND_RAW_TRANSACTION, {params});
-        console.log(response.data);
-        return true;
+        return response;
 
     } catch (error) {
         console.log(error);
@@ -330,38 +334,27 @@ async function run() {
                             checkKeyImages().then(function(checkKeyValue) {
                                 if (checkKeyValue) {
                                     console.log("Checked if keyimages were spent");
+
+                                    checkSpendableAmount();
+                                    displayData();
                                     
                                     getAnonOutputs().then(function(anonValue) {
                                         if (anonValue) {
                                             // Create the transaction
                                             createSignedTransaction().then(function(signedTxHex) {
-                                                console.log(signedTxHex);
                                                 const data = JSON.parse(signedTxHex.body);
                                                 rawSignedHex = data.result;
-                                                console.log("Raw hex = " + rawSignedHex);
-                                                console.log("Created signed transaction");
 
                                                 sendRawHex().then(function(sendValue) {
                                                     console.log(sendValue);
-                                                    console.log("Tx Sent");
-                                                })
+                                                    console.log("Tx Sent - ", sendValue);
+                                                });
                                             });
                                         }
-
                                     });
-
-
-                                    checkSpendableAmount();
-                                    displayData();
-                                    /// Get AnonOuts
-
-                                    /// Create Tranasction
-
-                                    /// Send to explorer
                                 } else {
                                     console.log("Failed to check if keyimages were spent");
                                 }
-                                
                             });
                         });
                     } else {
