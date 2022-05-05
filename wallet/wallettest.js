@@ -20,13 +20,15 @@ const GET_TRANSACTIONS = "getwatchonlytxes";
 const GET_CHECK_KEYIMAGES = "checkkeyimages";
 const GET_ANON_OUTPUTS = "getanonoutputs";
 const POST_SEND_RAW_TRANSACTION = "sendrawtransaction";
+const GET_TX_OUT = "gettxout";
 
 const USER = process.env.RPC_USER;
 const PASS = process.env.RPC_PASSWORD;
 const RPC_PORT = process.env.LIGHT_WALLET_RPC_PORT;
 
 const SEND_TO_ADDRESS = "3tXzvUU6PnWvZZaDt56uX8B9DT62QRVvAheWwRCyiG4TJyco8CdxbzkHUD24Ns7jdMP4GicdUMo5AmGCdTwfhq3QPHqUJvoZGF9sYWm";
-const SEND_AMOUNT = "100";
+const SEND_AMOUNT = 100;
+const FEE = 0.1;
 
 const headers = {
     "content-type": "text/plain;"
@@ -95,6 +97,7 @@ if(!secp256k1.privateKeyVerify(readSpendPriv)) {
 
 let addressVerified = false;
 let utxos = [];
+let stealth = [];
 let utxosKeyImages = [];
 let balance = 0;
 let anonoutputs = [];
@@ -149,8 +152,22 @@ async function getTransactions() {
         const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend) };
         let response = await axios.get(WATCHONLY_API_URL+GET_TRANSACTIONS, {params});
 
-        utxos = response.data.result
+        utxos = response.data.result.anon;
+        stealth = response.data.result.stealth;
         return true;
+    } catch(error) {
+        console.log(error);
+        return false;
+    }
+}
+
+async function getTxOut(hash, index) {
+    try {
+        const params = { txid: hash, n: index };
+        let response = await axios.get(WATCHONLY_API_URL+GET_TX_OUT, {params});
+
+        return response.data.result;
+
     } catch(error) {
         console.log(error);
         return false;
@@ -164,7 +181,7 @@ async function getKeyImages() {
     try {
         var keyimages = [];
         for (const item in Object.keys(utxos)) {
-            keyimages.push(`"${utxos[item].raw}"`);
+                keyimages.push(`"${utxos[item].raw}"`);
         }
 
         var params = [];
@@ -182,6 +199,7 @@ async function getKeyImages() {
         };
 
         const result = await requestPromise(options)
+        // console.log(result);
         return result;
     } catch (error) {
         console.log(error);
@@ -197,16 +215,21 @@ async function checkKeyImages() {
         }
 
         var keys = [];
+
         for (item in utxosKeyImages) {
-            keys.push(utxosKeyImages[item].keyimage);
+            if (utxosKeyImages[item].tx_type === "anon") {
+                keys.push(utxosKeyImages[item].keyimage);
+            } 
         }
 
-        const params = { keyimages: keys };
+       
+
+        const params = { keyimages: keys};
         let response = await axios.get(WATCHONLY_API_URL+GET_CHECK_KEYIMAGES, {params});
 
-        console.log(response.data);
         // update our keyimage list
         for (item in response.data.result) {
+            console.log(response.data.result[item]);
             if (response.data.result[item].status === 'valid') {
                 utxosKeyImages[item].spent = response.data.result[item].spent;
                 utxosKeyImages[item].spentinmempool = response.data.result[item].spentinmempool;
@@ -239,18 +262,19 @@ async function getAnonOutputs() {
 
 async function createSignedTransaction() {
     try {
-        var currentAmount = 0;
+        let currentAmount = 0;
         var rawUtxoData = [];
         var rawAnonOutputData = [];
-        console.log(utxosKeyImages);
         for (const item in Object.keys(utxos)) {
-            if (!utxosKeyImages[item].spent && !utxosKeyImages[item].spentinmempool) {
-                if (currentAmount < SEND_AMOUNT) {
-                    currentAmount += utxos[item].amount
-                    rawUtxoData.push(`"${utxos[item].raw}"`);
-                } else {
-                    break;
-                }
+            if (utxosKeyImages[item].spent || utxosKeyImages[item].spentinmempool) {
+                continue;
+            }
+
+            if (currentAmount <= SEND_AMOUNT) {
+                currentAmount += utxosKeyImages[item].amount;
+                rawUtxoData.push(`"${utxos[item].raw}"`);
+            } else {
+                break;
             }
         }
 
@@ -324,6 +348,8 @@ async function run() {
             if (addressValue == "synced") {
                 getTransactions().then(function(txValue) {
                     if (txValue) {
+
+                        //console.log(utxos);
                         getKeyImages().then(function(getKeyValue) {
                             console.log("Called get getKeyImages");
                             const data = JSON.parse(getKeyValue.body);
@@ -331,10 +357,11 @@ async function run() {
                                 utxosKeyImages.push(element);
                             });
 
+                            console.log(utxosKeyImages);
+                            return;
+
                             checkKeyImages().then(function(checkKeyValue) {
                                 if (checkKeyValue) {
-                                    console.log("Checked if keyimages were spent");
-
                                     checkSpendableAmount();
                                     displayData();
                                     
