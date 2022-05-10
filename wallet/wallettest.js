@@ -27,8 +27,11 @@ const PASS = process.env.RPC_PASSWORD;
 const RPC_PORT = process.env.LIGHT_WALLET_RPC_PORT;
 
 const SEND_TO_ADDRESS = "3tXzvUU6PnWvZZaDt56uX8B9DT62QRVvAheWwRCyiG4TJyco8CdxbzkHUD24Ns7jdMP4GicdUMo5AmGCdTwfhq3QPHqUJvoZGF9sYWm";
-const SEND_AMOUNT = 100;
+const SEND_AMOUNT = 10;
 const FEE = 0.1;
+
+const SEND_SEALTH = true;
+const SEND_TX = false;
 
 const headers = {
     "content-type": "text/plain;"
@@ -96,10 +99,15 @@ if(!secp256k1.privateKeyVerify(readSpendPriv)) {
 }
 
 let addressVerified = false;
-let utxos = [];
-let stealth = [];
+let anonutxos = [];
+let stealthutxos = [];
 let utxosKeyImages = [];
-let balance = 0;
+let utxosStealthInfo = [];
+let stealthChecked = {};
+let anonbalance = 0;
+let stealthbalance = 0;
+let stealthSpentCount = 0;
+let anonSpentCount = 0;
 let anonoutputs = [];
 
 // Create Stealth Address
@@ -152,8 +160,8 @@ async function getTransactions() {
         const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend) };
         let response = await axios.get(WATCHONLY_API_URL+GET_TRANSACTIONS, {params});
 
-        utxos = response.data.result.anon;
-        stealth = response.data.result.stealth;
+        anonutxos = response.data.result.anon;
+        stealthutxos = response.data.result.stealth;
         return true;
     } catch(error) {
         console.log(error);
@@ -166,7 +174,10 @@ async function getTxOut(hash, index) {
         const params = { txid: hash, n: index };
         let response = await axios.get(WATCHONLY_API_URL+GET_TX_OUT, {params});
 
-        return response.data.result;
+
+        let spent = response.data.result === null;
+        stealthChecked[`${hash}${index}`] = spent;
+        return true;
 
     } catch(error) {
         console.log(error);
@@ -177,11 +188,17 @@ async function getTxOut(hash, index) {
 /// Get the keyimages from the light wallet
 /// This would be done by Zelcore running the daemon with -lightwallet=1
 /// calling getkeyimages and passing in the correct params
-async function getKeyImages() {
+async function getKeyImages(type) {
     try {
         var keyimages = [];
-        for (const item in Object.keys(utxos)) {
-                keyimages.push(`"${utxos[item].raw}"`);
+        if (type === "anon") {
+            for (const item in Object.keys(anonutxos)) {
+                    keyimages.push(`"${anonutxos[item].raw}"`);
+            }
+        } else if (type === "stealth") {
+            for (const item in Object.keys(stealthutxos)) {
+                keyimages.push(`"${stealthutxos[item].raw}"`);
+            }
         }
 
         var params = [];
@@ -222,14 +239,11 @@ async function checkKeyImages() {
             } 
         }
 
-       
-
         const params = { keyimages: keys};
         let response = await axios.get(WATCHONLY_API_URL+GET_CHECK_KEYIMAGES, {params});
 
         // update our keyimage list
         for (item in response.data.result) {
-            console.log(response.data.result[item]);
             if (response.data.result[item].status === 'valid') {
                 utxosKeyImages[item].spent = response.data.result[item].spent;
                 utxosKeyImages[item].spentinmempool = response.data.result[item].spentinmempool;
@@ -265,16 +279,28 @@ async function createSignedTransaction() {
         let currentAmount = 0;
         var rawUtxoData = [];
         var rawAnonOutputData = [];
-        for (const item in Object.keys(utxos)) {
-            if (utxosKeyImages[item].spent || utxosKeyImages[item].spentinmempool) {
-                continue;
+        if (SEND_SEALTH) {
+            for (const item in Object.keys(utxosStealthInfo)) {
+                if(stealthChecked[`${utxosStealthInfo[item].tx_hash}${utxosStealthInfo[item].tx_index}`] === false) {
+                    if (currentAmount <= SEND_AMOUNT) {
+                        currentAmount += utxosStealthInfo[item].amount;
+                        rawUtxoData.push(`"${stealthutxos[item].raw}"`);
+                    }
+                }
             }
 
-            if (currentAmount <= SEND_AMOUNT) {
-                currentAmount += utxosKeyImages[item].amount;
-                rawUtxoData.push(`"${utxos[item].raw}"`);
-            } else {
-                break;
+        } else {
+            for (const item in Object.keys(anonutxos)) {
+                if (utxosKeyImages[item].spent || utxosKeyImages[item].spentinmempool) {
+                    continue;
+                }
+
+                if (currentAmount <= SEND_AMOUNT) {
+                    currentAmount += utxosKeyImages[item].amount;
+                    rawUtxoData.push(`"${anonutxos[item].raw}"`);
+                } else {
+                    break;
+                }
             }
         }
 
@@ -324,15 +350,33 @@ function checkSpendableAmount() {
     for (const item in utxosKeyImages) {
         if (utxosKeyImages[item].spent === false) {
             amount += utxosKeyImages[item].amount;
+        } else {
+            anonSpentCount++;
         }
     }
-    balance = amount;
+    anonbalance = amount;
+
+    amount = 0;
+
+    for (const item in utxosStealthInfo) {
+        if(stealthChecked[`${utxosStealthInfo[item].tx_hash}${utxosStealthInfo[item].tx_index}`] === false) {
+            amount += utxosStealthInfo[item].amount;
+        } else {
+            stealthSpentCount++;
+        }
+    }
+    stealthbalance = amount;
+
 }
 
 function displayData() {
-    console.log("Total numer of transactions: ", utxos.length);
-    console.log("Total balance: ", balance);
-    console.log("Total KeyImages: ", utxosKeyImages.length);
+    console.log("Total number unspent Anon utxos: ", anonutxos.length - anonSpentCount);
+    console.log("Total Anon balance: ", anonbalance);
+
+    console.log("Total number unspent Stealth utxos: ", stealthutxos.length - stealthSpentCount);
+    console.log("Total Stealth balance: ", stealthbalance);
+
+    // console.log("Total KeyImages: ", utxosKeyImages.length);
 }
 
 // API - Check address status - If address not imported, import it. 
@@ -349,38 +393,53 @@ async function run() {
                 getTransactions().then(function(txValue) {
                     if (txValue) {
 
-                        //console.log(utxos);
-                        getKeyImages().then(function(getKeyValue) {
-                            console.log("Called get getKeyImages");
+                        // Check to see if the stealth utxo's are spent or not
+                        stealthutxos.forEach(utxo => {
+                            getTxOut(utxo.tx_hash, utxo.n).then(function(value) {
+                                //console.log(stealthChecked[`${utxo.tx_hash}${utxo.n}`]);
+                            })
+                        });
+
+                        getKeyImages('anon').then(function(getKeyValue) {
                             const data = JSON.parse(getKeyValue.body);
                             data.result.forEach(element => {
                                 utxosKeyImages.push(element);
                             });
 
-                            console.log(utxosKeyImages);
-                            return;
+                            getKeyImages('stealth').then(function(getStealthInfo) {
+                                const data = JSON.parse(getStealthInfo.body);
+                                data.result.forEach(element => {
+                                    utxosStealthInfo.push(element);
+                                });
 
-                            checkKeyImages().then(function(checkKeyValue) {
-                                if (checkKeyValue) {
-                                    checkSpendableAmount();
-                                    displayData();
-                                    
-                                    getAnonOutputs().then(function(anonValue) {
-                                        if (anonValue) {
-                                            // Create the transaction
-                                            createSignedTransaction().then(function(signedTxHex) {
-                                                const data = JSON.parse(signedTxHex.body);
-                                                rawSignedHex = data.result;
+                                checkKeyImages().then(function(checkKeyValue) {
+                                    if (checkKeyValue) {
+                                        checkSpendableAmount();
+                                        displayData();
+                                        
+                                        getAnonOutputs().then(function(anonValue) {
+                                            if (anonValue) {
+                                                // Create the transaction
+                                                createSignedTransaction().then(function(signedTxHex) {
+                                                    const data = JSON.parse(signedTxHex.body);
+                                                    rawSignedHex = data.result;
 
-                                                sendRawHex().then(function(sendValue) {
-                                                    console.log("Tx Sent - ", sendValue.data);
+                                                    if (rawSignedHex === null) {
+                                                        console.log("Transaction creation process failed");
+                                                    } else {
+                                                        if (SEND_TX) {
+                                                            sendRawHex().then(function(sendValue) {
+                                                                console.log("Tx Sent - ", sendValue.data);
+                                                            });
+                                                        }
+                                                    }
                                                 });
-                                            });
-                                        }
-                                    });
-                                } else {
-                                    console.log("Failed to check if keyimages were spent");
-                                }
+                                            }
+                                        });
+                                    } else {
+                                        console.log("Failed to check if keyimages were spent");
+                                    }
+                                });
                             });
                         });
                     } else {
