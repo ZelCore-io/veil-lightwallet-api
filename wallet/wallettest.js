@@ -171,6 +171,19 @@ async function getTransactions() {
     }
 }
 
+async function checkStealthSpent() {
+    try {
+        await stealthutxos.forEach(utxo => {
+            getTxOut(utxo.tx_hash, utxo.n);
+        });
+
+        return true;
+    } catch(error) {
+        console.log(error);
+        return false;
+    }
+}
+
 async function getTxOut(hash, index) {
     try {
         const params = { txid: hash, n: index };
@@ -388,89 +401,58 @@ function displayData() {
 // API - Fetch anonoutputs
 // Light Daemon - Build Tx
 
-async function run() {
+async function spendFromAddress() {
     try {
-        getAddressStatus().then(function(addressValue) {
-            if (addressValue == "synced") {
-                getTransactions().then(function(txValue) {
-                    if (txValue) {
+        let addressValue = await getAddressStatus();
 
-                        // Check to see if the stealth utxo's are spent or not
-                        stealthutxos.forEach(utxo => {
-                            getTxOut(utxo.tx_hash, utxo.n).then(function(value) {
-                                //console.log(stealthChecked[`${utxo.tx_hash}${utxo.n}`]);
-                            })
-                        });
+        if (addressValue == "failed") {
+            console.log("importing address");
+            await importAddress();
+        } else if (addressValue == "scanning") {
+            console.log("Address Scanning... Please wait and try again");
+        } else {
+            await getTransactions();
+            await checkStealthSpent();
 
-                        getKeyImages('anon').then(function(getKeyValue) {
-                            const data = JSON.parse(getKeyValue.body);
-                            data.result.forEach(element => {
-                                utxosKeyImages.push(element);
-                            });
+            let anonInfo = await getKeyImages('anon');
+            const anonData = JSON.parse(anonInfo.body);
+            anonData.result.forEach(element => {
+                utxosKeyImages.push(element);
+            });
 
-                            getKeyImages('stealth').then(function(getStealthInfo) {
-                                const data = JSON.parse(getStealthInfo.body);
-                                data.result.forEach(element => {
-                                    utxosStealthInfo.push(element);
-                                });
+            let stealthInfo = await getKeyImages('stealth');
+            const stealthData = JSON.parse(stealthInfo.body);
+            stealthData.result.forEach(element => {
+                utxosStealthInfo.push(element);
+            });
 
-                                checkKeyImages().then(function(checkKeyValue) {
-                                    if (checkKeyValue) {
-                                        checkSpendableAmount();
-                                        displayData();
-                                        
-                                        getAnonOutputs().then(function(anonValue) {
-                                            if (anonValue) {
-                                                // Create the transaction
-                                                createSignedTransaction().then(function(signedTxHex) {
-                                                    const data = JSON.parse(signedTxHex.body);
-                                                    rawSignedHex = data.result;
+            await checkKeyImages();
 
-                                                    if (rawSignedHex === null) {
-                                                        console.log("Transaction creation process failed");
-                                                    } else {
-                                                        if (SEND_TX) {
-                                                            sendRawHex().then(function(sendValue) {
-                                                                console.log("Tx Sent - ", sendValue.data);
-                                                            });
-                                                        }
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    } else {
-                                        console.log("Failed to check if keyimages were spent");
-                                    }
-                                });
-                            });
-                        });
-                    } else {
-                        console.log("Get transactions failed to get transactions");
-                    }
-                });
-            } else if (addressValue == "failed") {
-                importAddress().then(function(value) {
-                    console.log("Imported address, Try again in a few mintues givening to to sync");
-                });
+            checkSpendableAmount();
+            displayData();
+
+            await getAnonOutputs();
+
+            let txInfo = await createSignedTransaction();
+            const txData = JSON.parse(txInfo.body);
+            rawSignedHex = txData.result;
+
+            if (rawSignedHex === null) {
+                console.log("Transaction creation process failed");
             } else {
-                console.log("Scanning blockchain for transactions. Please wait...");
+                if (SEND_TX) {
+                    sendRawHex().then(function(sendValue) {
+                        console.log("Tx Sent - ", sendValue.data);
+                    });
+                } else {
+                    console.log(rawSignedHex);
+                }
             }
-        });
+        }
+
     } catch (error) {
         console.log(error);
     }
 }
 
-
-// let a = await getAddressStatus();
-
-// let b = await getTransactions();
-
-// let c = await getKeyImages();
-
-// let d = await checkKeyImages();
-
-// checkSpendableAmount();
-// displayData();
-
-run();
+spendFromAddress();
