@@ -26,11 +26,13 @@ const USER = process.env.RPC_USER;
 const PASS = process.env.RPC_PASSWORD;
 const RPC_PORT = process.env.LIGHT_WALLET_RPC_PORT;
 
-const SEND_TO_ADDRESS = "3tXzvUU6PnWvZZaDt56uX8B9DT62QRVvAheWwRCyiG4TJyco8CdxbzkHUD24Ns7jdMP4GicdUMo5AmGCdTwfhq3QPHqUJvoZGF9sYWm";
+// const SEND_TO_ADDRESS = "3tXzvUU6PnWvZZaDt56uX8B9DT62QRVvAheWwRCyiG4TJyco8CdxbzkHUD24Ns7jdMP4GicdUMo5AmGCdTwfhq3QPHqUJvoZGF9sYWm";
+const SEND_TO_ADDRESS = "msvVCUqbUR7YJX5VjaRmFXnyMobbGxApUt";
+// const SEND_TO_ADDRESS = "tv1qrj2t6an7a56ydafj899x9cl7f76gg3lanrlcsh"
 const SEND_AMOUNT = 10;
 const FEE = 0.1;
 
-const SEND_SEALTH = true;
+const SEND_SEALTH = false;
 const SEND_TX = false;
 
 const headers = {
