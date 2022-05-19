@@ -103,13 +103,15 @@ async function decodeRawTransaction(req, res) {
 
 async function getTxOut(req, res) {
   try {
-    let { txid } = req.txid;
+    let { txid } = req.params;
     txid = txid || req.query.txid;
-    let { n } = req.n;
+    let { n } = req.params;
     n = n || req.query.n;
     if (!txid || !n) {
       throw new Error('Missing transaction txid or n identifiers'); // TODO or let daemon handle it?
     }
+
+    n = serviceHelper.ensureNumber(n);
     const response = await performRPCcall('gettxout', [txid, n, true]);
     res.json(response);
   } catch (error) {
@@ -124,6 +126,10 @@ async function getAnonOutputs(req, res) {
     inputsize = inputsize || req.query.inputsize || 11;
     let { ringsize } = req.params;
     ringsize = ringsize || req.query.ringsize || 11;
+
+    ringsize = serviceHelper.ensureNumber(ringsize);
+    inputsize = serviceHelper.ensureNumber(inputsize);
+
     const response = await performRPCcall('getanonoutputs', [inputsize, ringsize]);
     res.json(response);
   } catch (error) {
@@ -151,6 +157,8 @@ async function checkKeyImages(req, res) { // iamge,imageB,imageC
     let { keyimages } = req.params;
     keyimages = keyimages || req.query.keyimages;
 
+    keyimages = serviceHelper.ensureObject(keyimages);
+
     const response = await performRPCcall('checkkeyimages', [keyimages]);
     res.json(response);
   } catch (error) {
@@ -163,16 +171,24 @@ async function getWatchOnlyTxs(req, res) {
   try {
     let { scansecret } = req.params;
     scansecret = scansecret || req.query.scansecret;
-    let { scanpublic } = req.params;
-    scanpublic = scanpublic || req.query.scanpublic;
-    let { spendsecret } = req.params;
-    spendsecret = spendsecret || req.query.spendsecret;
+    let { startingindex } = req.params;
+    startingindex = startingindex || req.query.startingindex;
 
-    if (!scansecret || !scanpublic || !spendsecret) {
-      throw new Error('Must have a valid scanpublic and spendsecret and spendsecret');
+    if (!scansecret) {
+      throw new Error('Must have a valid scansecret');
     }
 
-    const response = await performRPCcall('getwatchonlytxes', [scansecret, scanpublic, spendsecret]);
+    if (startingindex) {
+      if (startingindex < 0) {
+        throw new Error('Must have startingindex be a positive number');
+      }
+    } else {
+      startingindex = 0;
+    }
+
+    startingindex = serviceHelper.ensureNumber(startingindex);
+
+    const response = await performRPCcall('getwatchonlytxes', [scansecret, startingindex]);
     res.json(response);
   } catch (error) {
     log.error(error);

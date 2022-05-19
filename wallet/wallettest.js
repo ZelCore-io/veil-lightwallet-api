@@ -4,6 +4,7 @@ const { stat } = require('fs');
 const secp256k1 = require('secp256k1');
 const SxAddress = require('../stealth/StealthAddress');
 const axios = require('axios').default;
+var qs = require('qs');
 var request = require("request");
 
 const dotenv = require("dotenv");
@@ -16,7 +17,7 @@ const WATCHONLY_API_URL = "http://164.92.101.99:4444/api/";
 const GET_BLOCCK_COUNT = "getblockcount";
 const GET_ADDRESS_STATUS = "status";
 const GET_IMPORT_ADDRESS = "importlightaddress";
-const GET_TRANSACTIONS = "getwatchonlytxes";
+const GET_TRANSACTIONS = "getwatchonlytxs";
 const GET_CHECK_KEYIMAGES = "checkkeyimages";
 const GET_ANON_OUTPUTS = "getanonoutputs";
 const POST_SEND_RAW_TRANSACTION = "sendrawtransaction";
@@ -159,7 +160,7 @@ async function getTransactions() {
             console.log("Address not verified by server");
             return false;
         }
-        const params = { scansecret: buf2hex(readScanPriv), spendpublic: buf2hex(readPublicSpend) };
+        const params = { scansecret: buf2hex(readScanPriv), startingindex: 0};
         let response = await axios.get(WATCHONLY_API_URL+GET_TRANSACTIONS, {params});
 
         anonutxos = response.data.result.anon;
@@ -254,8 +255,10 @@ async function checkKeyImages() {
             } 
         }
 
-        const params = { keyimages: keys};
-        let response = await axios.get(WATCHONLY_API_URL+GET_CHECK_KEYIMAGES, {params});
+        var quoted = "\"" + keys.join("\",\"") + "\"";
+
+        const params = {};
+        let response = await axios.get(`${WATCHONLY_API_URL}${GET_CHECK_KEYIMAGES}/[${quoted}]`, {params});
 
         // update our keyimage list
         for (item in response.data.result) {
@@ -350,8 +353,19 @@ async function createSignedTransaction() {
 
 async function sendRawHex() {
     try {
-        const params = { rawhex : rawSignedHex };
-        let response = await axios.post(WATCHONLY_API_URL+POST_SEND_RAW_TRANSACTION, {params});
+        var data = qs.stringify({
+            'rawhex': rawSignedHex 
+          });
+          var config = {
+            method: 'post',
+            url: WATCHONLY_API_URL+POST_SEND_RAW_TRANSACTION,
+            headers: { 
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            data : data
+          };
+
+        let response = await axios(config);
         return response;
 
     } catch (error) {
