@@ -1,11 +1,11 @@
-const http = require('http');
-const config = require('config');
 const dotenv = require('dotenv');
 
+dotenv.config();
+
+const http = require('http');
+const config = require('config');
 const app = require('./src/lib/server');
 const log = require('./src/lib/log');
-
-dotenv.config();
 
 const server = http.createServer(app);
 
