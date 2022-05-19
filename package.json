@@ -1,25 +1,52 @@
 {
-  "name": "veil-api",
+  "name": "veil-lightwallet-api",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
-  "scripts": {
-    "server": "nodemon server.js"
+  "description": "Veil Light Wallet API",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zelcore-io/veil-lightwallet-api.git"
   },
-  "keywords": [],
-  "author": "Jeremy Anderson",
+  "bugs": {
+    "url": "https://github.com/zelcore-io/veil-lightwallet-api/issues"
+  },
+  "homepage": "https://github.com/zelcore-io/veil-lightwallet-api#readme",
+  "scripts": {
+    "start": "nodemon server.js",
+    "server": "nodemon server.js",
+    "lint": "eslint ./",
+    "lint:fix": "eslint ./ --fix"
+  },
+  "keywords": ["veil", "crypto", "express", "api"],
+  "author": "Zelcore Technologies Inc.",
+  "contributors": [
+    {
+      "name": "Jeremy Anderson"
+    },
+    {
+      "name": "Tadeas Kmenta",
+      "email": "tadeas@zelcore.io"
+    }
+  ],
   "license": "ISC",
   "dependencies": {
+    "apicache": "^1.6.3",
     "axios": "^0.27.2",
-    "body-parser": "^1.19.2",
+    "config": "^3.3.7",
+    "cors": "^2.8.5",
     "bs58": "^5.0.0",
-    "dotenv": "^16.0.0",
-    "express": "^4.17.3",
-    "node-fetch": "^3.2.4",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "lru-cache": "^7.10.1",
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.16",
     "request": "^2.88.2",
-    "secp256k1": "^4.0.3"
+    "secp256k1": "^4.0.3",
+    "qs": "^6.10.3"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "eslint": "^8.15.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "power-assert": "^1.6.1"
   }
 }
