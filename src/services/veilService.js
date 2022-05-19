@@ -36,7 +36,7 @@ async function getBlockCount(req, res) {
 async function getPeerInfo(req, res) {
   try {
     const response = await performRPCcall('getpeerinfo');
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -46,7 +46,7 @@ async function getPeerInfo(req, res) {
 async function getRawMempool(req, res) {
   try {
     const response = await performRPCcall('getrawmempool');
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -58,7 +58,7 @@ async function getBlock(req, res) {
     let { hash } = req.params;
     hash = hash || req.query.hash;
     const response = await performRPCcall('getblock', [hash]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -70,7 +70,7 @@ async function getBlockHash(req, res) {
     let { index } = req.params;
     index = index || req.query.index;
     const response = await performRPCcall('getblockhash', [index]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -82,7 +82,7 @@ async function getRawTransaction(req, res) {
     let { id } = req.params;
     id = id || req.query.id;
     const response = await performRPCcall('getrawtransaction', [id]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -94,7 +94,7 @@ async function decodeRawTransaction(req, res) {
     let { hex } = req.params;
     hex = hex || req.query.hex;
     const response = await performRPCcall('decoderawtransaction', [hex]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -111,7 +111,7 @@ async function getTxOut(req, res) {
       throw new Error('Missing transaction txid or n identifiers'); // TODO or let daemon handle it?
     }
     const response = await performRPCcall('gettxout', [txid, n, true]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -125,7 +125,7 @@ async function getAnonOutputs(req, res) {
     let { ringsize } = req.params;
     ringsize = ringsize || req.query.ringsize || 11;
     const response = await performRPCcall('getanonoutputs', [inputsize, ringsize]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -139,7 +139,7 @@ async function getWatchOnlyStatus(req, res) {
     let { spendpublic } = req.params;
     spendpublic = spendpublic || req.query.spendpublic;
     const response = await performRPCcall('getwatchonlystatus', [scansecret, spendpublic]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -152,7 +152,7 @@ async function checkKeyImages(req, res) { // iamge,imageB,imageC
     keyimages = keyimages || req.query.keyimages;
 
     const response = await performRPCcall('checkkeyimages', [keyimages]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -173,7 +173,7 @@ async function getWatchOnlyTxs(req, res) {
     }
 
     const response = await performRPCcall('getwatchonlytxes', [scansecret, scanpublic, spendsecret]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -202,7 +202,7 @@ async function importLightWalletAddress(req, res) {
     }
 
     const response = await performRPCcall('importlightwalletaddress', [scansecret, spendpublic, createdheight]);
-    res.json(response.data);
+    res.json(response);
   } catch (error) {
     log.error(error);
     res.status(error.code || 500).send(error.message || 'Unexpected Error');
@@ -223,7 +223,7 @@ async function sendRawTransaction(req, res) {
       }
 
       const response = await performRPCcall('sendrawtransaction', [tx]);
-      res.json(response.data);
+      res.json(response);
     } catch (error) {
       log.error(error);
       res.status(error.code || 500).send(error.message || 'Unexpected Error');
