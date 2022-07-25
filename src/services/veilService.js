@@ -217,11 +217,11 @@ async function importLightWalletAddress(req, res) {
       throw new Error('Created height must be a blockheight or timestamp');
     }
 
-    const response = await performRPCcall('importlightwalletaddress', [scansecret, spendpublic, createdheight]);
+    const response = await performRPCcall('importlightwalletaddress', [scansecret, spendpublic, Number(createdheight)]);
     res.json(response);
   } catch (error) {
-    log.error(error);
-    res.status(error.code || 500).send(error.message || 'Unexpected Error');
+    log.error(error.response.data.error);
+    res.status(500).send(error.response.data.error.message);
   }
 }
 
